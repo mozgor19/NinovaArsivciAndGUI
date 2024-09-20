@@ -8,7 +8,7 @@ from enum import Enum
 from zlib import crc32
 from queue import Queue
 
-from logger import Logger
+from src.logger import Logger
 
 DATABASE_FILE_NAME = "ninova_arsivci.db"
 TABLE_CREATION_QUERY = "CREATE TABLE files (id INTEGER PRIMARY KEY, path TEXT UNIQUE, hash INT, isDeleted INT DEFAULT 0);"

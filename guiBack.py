@@ -1,36 +1,29 @@
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt, QStandardPaths
 from PyQt5 import QtGui, QtWidgets
 
-import sys
-
 from src.login import Login
+from src.logger import Logger
 from src.downloader import Downloader
 from src.course_selector import CourseManager
 from src.database import Database
 
 from guiFront import Ui_Arsivci
 
-
-class MainApp(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(MainApp, self).__init__()
+class GuiBackend:
+    def __init__(self, ui):
         self.ui = Ui_Arsivci()
         self.ui.setupUi(self)
 
         self.session = None
+        self.logger_instance = Logger(debug=True, verbose=True)
         self.download_folder = None
         self.db_instance = None
-
-        self.download_folder = QStandardPaths.writableLocation(
-            QStandardPaths.DesktopLocation
-        )
-        self.ui.label_selectionInfo.setText(f"İndirme Dizini: {self.download_folder}")
-
+        
         # Connect button signals
         self.ui.pushButton_login.clicked.connect(self.login)
         self.ui.pushButton_selectFolder.clicked.connect(self.select_folder)
-        self.ui.pushButton_download.clicked.connect(self.download)
+        self.ui.pushButton_download.clicked.connect(self.download_selected_courses)
 
     def login(self):
         username = self.ui.lineEdit_username.text()
@@ -41,36 +34,41 @@ class MainApp(QtWidgets.QMainWindow):
             return
 
         login_instance = Login(username, password)
-
+        
         try:
             self.session = login_instance.login()
+            self.logger_instance.info("Giriş başarılı!")
             self.ui.label_status.setText("Giriş başarılı!")
             self.load_courses()
         except PermissionError:
-            self.ui.label_status.setText(
-                "Kullanıcı adı veya şifre hatalı. Tekrar deneyin."
-            )
+            self.ui.label_status.setText("Kullanıcı adı veya şifre hatalı. Tekrar deneyin.")
+            self.logger_instance.warning("Kullanıcı adı veya şifre hatalı. Tekrar deneyin.")
+
+    def select_folder(self):
+        self.download_folder = QFileDialog.getExistingDirectory(None, "İndirme klasörü seç", "")
+        if self.download_folder:
+            self.ui.label_selectionInfo.setText(f"Seçilen dizin: {self.download_folder}")
+            self.logger_instance.info(f"İndirme klasörü seçildi: {self.download_folder}")
+        else:
+            self.logger_instance.warning("İndirme klasörü seçilmedi.")
 
     def load_courses(self):
-
         course_manager = CourseManager(self.session)
-        course_manager.get_course_list()
-
-        # ListView'e dersleri ekle
+        courses = course_manager.get_course_list()
+        # ListView'e dersleri eklemek
         model = QtGui.QStandardItemModel()
-
-        for course in course_manager.courses:
-            item = QtGui.QStandardItem((course.code + " | " + course.name))
+        for course in courses:
+            item = QtGui.QStandardItem(course)
             item.setCheckable(True)
             model.appendRow(item)
         self.ui.listView_courses.setModel(model)
 
-        self.ui.label_downloadInfo.setText(
-            "Lütfen indirmek istediğiniz dersleri ve indirme yerini seçin."
-        )
+    def download_selected_courses(self):
+        if not self.download_folder:
+            self.show_message("Lütfen indirme klasörü seçin.", "Hata")
+            return
 
-    def select_courses(self):
-
+        # ListView'den seçilen dersleri al
         selected_courses = []
         model = self.ui.listView_courses.model()
         for index in range(model.rowCount()):
@@ -82,41 +80,19 @@ class MainApp(QtWidgets.QMainWindow):
             self.show_message("Lütfen en az bir ders seçin.", "Hata")
             return
 
-        return selected_courses
-
-    def select_folder(self):
-        self.download_folder = QFileDialog.getExistingDirectory(
-            None, "İndirme klasörü seç", ""
-        )
-        self.ui.label_selectionInfo.setText(f"Seçilen dizin: {self.download_folder}")
-
-    def download(self):
-
-        courses = self.select_courses()
+        # Downloader başlat
         downloader = Downloader(self.session)
-        downloader.set_directory(self.download_folder)
         self.db_instance = Database(self.download_folder)
         self.db_instance.start_db()
 
-        for course in courses:
-            print(course)
-            downloader.download_all_in_course(
-                course, self.db_instance, self.db_instance.first_run
-            )
+        for course in selected_courses:
+            downloader.download_all_in_course(course, self.db_instance, self.db_instance.first_run)
 
         self.db_instance.write_records()
         self.show_message("Seçilen dersler indirildi.", "Başarılı")
-        self.ui.label_status.setText("Seçilen dersler indirildi.")
 
     def show_message(self, message, title):
         msg_box = QMessageBox()
         msg_box.setText(message)
         msg_box.setWindowTitle(title)
         msg_box.exec_()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = MainApp()
-    main_window.show()
-    sys.exit(app.exec_())

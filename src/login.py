@@ -1,7 +1,7 @@
 # Bismillahirrahmanirrahim
 
-from manager import Manager
-from logger import Logger
+from src.manager import Manager
+from src.logger import Logger
 
 from bs4 import BeautifulSoup
 import requests

@@ -4,10 +4,10 @@ from __future__ import annotations
 from typing import List, Tuple
 from collections import namedtuple
 from bs4 import BeautifulSoup
-import requests  # HTTP istekleri için kullanılacak
+import requests
 
-from logger import Logger
-from manager import Manager
+from src.logger import Logger
+from src.manager import Manager
 
 Course = namedtuple("Course", "code name link")
 COURSE_TITLE_OFFSET = 8
