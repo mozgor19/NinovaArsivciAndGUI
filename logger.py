@@ -1,6 +1,7 @@
 # Bismillahirrahmanirrahim
 
 # Utility functions for debugging, verbose logging, colored terminal output, and performance measurement.
+# It works only for terminal
 
 from time import perf_counter
 
@@ -45,7 +46,7 @@ class Logger:
                 start = perf_counter()
                 return_val = func(*args, **kwargs)
                 end = perf_counter()
-
+                
                 additional_info = return_val[0] if return_is_debug_info else ""
 
                 if is_level_debug:
@@ -53,7 +54,8 @@ class Logger:
                 else:
                     self.verbose(f"{additional_info[:self._FILE_NAME_MAX_LENGTH]:<30} {debug_name} {end-start} saniyede tamamlandı.")
 
-                return return_val
 
+                return return_val
+        
             return wrapper
         return decorator

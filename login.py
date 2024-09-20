@@ -2,6 +2,7 @@
 
 from manager import Manager
 from logger import Logger
+
 from bs4 import BeautifulSoup
 import requests
 
@@ -9,7 +10,8 @@ class Login:
     def __init__(self, username, password):
         self.username = username
         self.password = password
-        self.logger = Logger(debug=True, verbose=True)
+        self.logger = Logger()
+
 
     def check_connectivity(self):  #return type: bool
         try_URL = "http://www.example.com"
@@ -55,7 +57,7 @@ class Login:
         if page.find(id="ctl00_Header1_tdLogout") is None:
             raise PermissionError("Kullanıcı adı veya şifre yanlış!")
         return session
-
+    
     def _login_request(self, session: requests.Session, post_data: dict, page: BeautifulSoup):
         page = session.post("https://girisv3.itu.edu.tr" + page.form.get("action")[1:], data=post_data)
         return page

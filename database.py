@@ -1,3 +1,5 @@
+#Bismillahirrahmanirrahim
+
 from collections import namedtuple
 import sqlite3
 from os.path import join, exists
@@ -5,13 +7,17 @@ from os import remove as delete_file
 from enum import Enum
 from zlib import crc32
 from queue import Queue
-from logger import Logger  # Logger'ı import ettik
+
+from logger import Logger
 
 DATABASE_FILE_NAME = "ninova_arsivci.db"
 TABLE_CREATION_QUERY = "CREATE TABLE files (id INTEGER PRIMARY KEY, path TEXT UNIQUE, hash INT, isDeleted INT DEFAULT 0);"
-TABLE_CHECK_QUERY = "SELECT name FROM sqlite_master WHERE type='table' AND name='files';"
+TABLE_CHECK_QUERY = (
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='files';"
+)
 SELECT_FILE_BY_ID_QUERY = "SELECT isDeleted, id FROM files WHERE id = ?"
 FILE_INSERTION_QUERY = "INSERT INTO files (id, path, hash) VALUES (?, ?, ?)"
+
 
 class FILE_STATUS(Enum):
     NEW = 0
@@ -20,27 +26,56 @@ class FILE_STATUS(Enum):
 
 FileRecord = namedtuple("FileRecord", "id, path")
 
-class DB:
-    connection: sqlite3.Connection
-    to_add = Queue()
-    db_path: str
-    logger = Logger()
 
-    def init(self, base_path: str):
-        """ Connects to DB and checks and creates the table structure """
-        self.db_path = join(base_path, DATABASE_FILE_NAME)
+class Database:
+
+    def __init__(self,base_path):
+        self.base_path = base_path
+        self.db_path = join(self.base_path, DATABASE_FILE_NAME)
+        self.logger = Logger()
+        self.first_run = None
+        self.connection = None
+        self.to_add = Queue()
+
+        self.get_first_run()
+    
+    def start_db(self):
+
+        if self.first_run:
+            try:
+                delete_file(self.db_path)
+            except:
+                pass
+
         self.connect()
         cursor = self.connection.cursor()
-        cursor.execute(TABLE_CHECK_QUERY)
-        if cursor.fetchone() is None:
+        if self.first_run:
             cursor.execute(TABLE_CREATION_QUERY)
             self.logger.verbose("Veri tabanı ilk çalıştırma için hazırlandı.")
         else:
-            self.logger.verbose("Veri tabanı mevcut.")
-        cursor.close()
+            cursor.execute(TABLE_CHECK_QUERY)
+            if cursor.fetchone()[0] != "files":
+                self.logger.fail(
+                    f"Veri tabanı bozuk. '{DATABASE_FILE_NAME}' dosyasını silip tekrar başlatın. Silme işlemi sonrasında tüm dosyalar yeniden indirilir."
+                )
 
+        cursor.close()
+    
+    def get_first_run(self):
+        """
+        Checks whether this is the first time that program ran on selected directory by checking database file
+        """
+        if self.base_path:
+            first_run = (not exists(join(self.base_path, "ninova_arsivci.db")))
+            self.first_run = first_run
+        else:
+            self.logger.fail("Klasör seçilmemiş. get_directory() fonksiyonu ile BASE_PATH değişkeni ayarlanmalı! Geliştiriciye bildirin!")
+    
     def connect(self):
-        """ Connects to DB using db_path """
+        """
+        Connects to DB using db_path class attribute
+        Sets connection object of the class, does not return anything
+        """
         try:
             self.connection = sqlite3.connect(self.db_path, check_same_thread=False)
             self.logger.debug("Veri tabanına bağlandı.")
@@ -64,6 +99,7 @@ class DB:
         else:
             return FILE_STATUS.NEW
 
+    # Should be called after the download
     def add_file(self, id: int, path: str):
         self.to_add.put(FileRecord(id, path))
 
@@ -72,9 +108,13 @@ class DB:
         self.connection.close()
 
     def get_new_cursor(self):
-        return self.connection.cursor()
+        if self.connection:
+            return self.connection.cursor()
+        else:
+            self.logger.fail("Veri tabanı bağlantısı yok. Cursor alınamıyor.")
+            raise AttributeError("Veri tabanı bağlantısı yok.")
 
-    @logger.speed_measure("Veri tabanına yazma", False, False)
+
     def write_records(self):
         cursor = self.get_new_cursor()
         while not self.to_add.empty():
@@ -89,4 +129,5 @@ class DB:
                 self.logger.new_file(record.path)
             else:
                 self.logger.warning(f"Veritabanına yazılacak {record.path} dosyası bulunamadı. Veri tabanına yazılmayacak")
+
         self.apply_changes_and_close()
