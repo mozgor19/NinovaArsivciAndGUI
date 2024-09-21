@@ -1,3 +1,5 @@
+# Bismillahirrahmanirrahim
+
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QLineEdit
 from PyQt5.QtCore import Qt, QStandardPaths
 from PyQt5 import QtGui, QtWidgets
@@ -9,7 +11,7 @@ from src.downloader import Downloader
 from src.course_selector import CourseManager
 from src.database import Database
 
-from guiFront import Ui_Arsivci
+from ui.guiFront import Ui_Arsivci
 
 
 class MainApp(QtWidgets.QMainWindow):
@@ -21,6 +23,7 @@ class MainApp(QtWidgets.QMainWindow):
         self.session = None
         self.download_folder = None
         self.db_instance = None
+        self.courses = None
 
         self.download_folder = QStandardPaths.writableLocation(
             QStandardPaths.DesktopLocation
@@ -54,13 +57,13 @@ class MainApp(QtWidgets.QMainWindow):
     def load_courses(self):
 
         course_manager = CourseManager(self.session)
-        course_manager.get_course_list()
+        self.courses = course_manager.get_course_list()
 
         # ListView'e dersleri ekle
         model = QtGui.QStandardItemModel()
 
-        for course in course_manager.courses:
-            item = QtGui.QStandardItem((course.code + " | " + course.name))
+        for i, course in enumerate(course_manager.courses):
+            item = QtGui.QStandardItem(str(i) + "-" + course.code + " | " + course.name)
             item.setCheckable(True)
             model.appendRow(item)
         self.ui.listView_courses.setModel(model)
@@ -72,11 +75,23 @@ class MainApp(QtWidgets.QMainWindow):
     def select_courses(self):
 
         selected_courses = []
+        binary_check = []
         model = self.ui.listView_courses.model()
         for index in range(model.rowCount()):
             item = model.item(index)
             if item.checkState() == Qt.Checked:
-                selected_courses.append(item.text())
+                # selected_courses.append(item.text())
+                binary_check.append(1)
+            else:
+                binary_check.append(0)
+
+        indeksler = []
+        for i, eleman in enumerate(binary_check):
+            if eleman == 1:
+                indeksler.append(i)
+
+        for selected_index in indeksler:
+            selected_courses.append(self.courses[selected_index])
 
         if not selected_courses:
             self.show_message("Lütfen en az bir ders seçin.", "Hata")
@@ -99,7 +114,6 @@ class MainApp(QtWidgets.QMainWindow):
         self.db_instance.start_db()
 
         for course in courses:
-            print(course)
             downloader.download_all_in_course(
                 course, self.db_instance, self.db_instance.first_run
             )

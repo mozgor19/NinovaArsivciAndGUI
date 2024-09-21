@@ -8,7 +8,8 @@ from src.downloader import Downloader
 from src.course_selector import CourseManager
 from src.database import Database
 
-from guiFront import Ui_Arsivci
+from ui.guiFront import Ui_Arsivci
+
 
 class GuiBackend:
     def __init__(self, ui):
@@ -19,7 +20,7 @@ class GuiBackend:
         self.logger_instance = Logger(debug=True, verbose=True)
         self.download_folder = None
         self.db_instance = None
-        
+
         # Connect button signals
         self.ui.pushButton_login.clicked.connect(self.login)
         self.ui.pushButton_selectFolder.clicked.connect(self.select_folder)
@@ -34,21 +35,31 @@ class GuiBackend:
             return
 
         login_instance = Login(username, password)
-        
+
         try:
             self.session = login_instance.login()
             self.logger_instance.info("Giriş başarılı!")
             self.ui.label_status.setText("Giriş başarılı!")
             self.load_courses()
         except PermissionError:
-            self.ui.label_status.setText("Kullanıcı adı veya şifre hatalı. Tekrar deneyin.")
-            self.logger_instance.warning("Kullanıcı adı veya şifre hatalı. Tekrar deneyin.")
+            self.ui.label_status.setText(
+                "Kullanıcı adı veya şifre hatalı. Tekrar deneyin."
+            )
+            self.logger_instance.warning(
+                "Kullanıcı adı veya şifre hatalı. Tekrar deneyin."
+            )
 
     def select_folder(self):
-        self.download_folder = QFileDialog.getExistingDirectory(None, "İndirme klasörü seç", "")
+        self.download_folder = QFileDialog.getExistingDirectory(
+            None, "İndirme klasörü seç", ""
+        )
         if self.download_folder:
-            self.ui.label_selectionInfo.setText(f"Seçilen dizin: {self.download_folder}")
-            self.logger_instance.info(f"İndirme klasörü seçildi: {self.download_folder}")
+            self.ui.label_selectionInfo.setText(
+                f"Seçilen dizin: {self.download_folder}"
+            )
+            self.logger_instance.info(
+                f"İndirme klasörü seçildi: {self.download_folder}"
+            )
         else:
             self.logger_instance.warning("İndirme klasörü seçilmedi.")
 
@@ -86,7 +97,9 @@ class GuiBackend:
         self.db_instance.start_db()
 
         for course in selected_courses:
-            downloader.download_all_in_course(course, self.db_instance, self.db_instance.first_run)
+            downloader.download_all_in_course(
+                course, self.db_instance, self.db_instance.first_run
+            )
 
         self.db_instance.write_records()
         self.show_message("Seçilen dersler indirildi.", "Başarılı")
