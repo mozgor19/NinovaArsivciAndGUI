@@ -44,7 +44,7 @@ class CourseManager:
             self.courses.append(Course(code, name, link))
 
         # print(self.courses)
-        # return tuple(self.courses)
+        return tuple(self.courses)
 
     def filter_courses(self) -> Tuple[Course]:
         for i, course in enumerate(self.courses):

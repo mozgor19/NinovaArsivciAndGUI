@@ -6,21 +6,21 @@ from src.logger import Logger
 from bs4 import BeautifulSoup
 import requests
 
+
 class Login:
     def __init__(self, username, password):
         self.username = username
         self.password = password
         self.logger = Logger()
 
-
-    def check_connectivity(self):  #return type: bool
+    def check_connectivity(self):  # return type: bool
         try_URL = "http://www.example.com"
         try:
             requests.get(try_URL)
             return True
         except:
             return False
-    
+
     def login(self):
         _URL = Manager.URL.value + "/Kampus1"
         HEADERS = {
@@ -34,14 +34,15 @@ class Login:
 
         # Requesting and parsing the page
         session = requests.Session()
-        try:
-            page = session.get(_URL, headers=HEADERS)
-        except Exception as e:
-            self.logger.warning("Ninova sunucusuna bağlanılamadı.")
-            if self.check_connectivity():
-                self.logger.fail("Internet var ancak Ninova'ya bağlanılamıyor.")
-            else:
-                self.logger.fail("Internete erişim yok. Bağlantınızı kontrol edin.")
+        page = session.get(_URL, headers=HEADERS)
+        # try:
+        #     page = session.get(_URL, headers=HEADERS)
+        # except Exception as e:
+        #     self.logger.warning("Ninova sunucusuna bağlanılamadı.")
+        #     if self.check_connectivity():
+        #         self.logger.fail("Internet var ancak Ninova'ya bağlanılamıyor.")
+        #     else:
+        #         self.logger.fail("Internete erişim yok. Bağlantınızı kontrol edin.")
 
         page = BeautifulSoup(page.content, "lxml")
 
@@ -57,7 +58,11 @@ class Login:
         if page.find(id="ctl00_Header1_tdLogout") is None:
             raise PermissionError("Kullanıcı adı veya şifre yanlış!")
         return session
-    
-    def _login_request(self, session: requests.Session, post_data: dict, page: BeautifulSoup):
-        page = session.post("https://girisv3.itu.edu.tr" + page.form.get("action")[1:], data=post_data)
+
+    def _login_request(
+        self, session: requests.Session, post_data: dict, page: BeautifulSoup
+    ):
+        page = session.post(
+            "https://girisv3.itu.edu.tr" + page.form.get("action")[1:], data=post_data
+        )
         return page
