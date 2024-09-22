@@ -13,7 +13,7 @@ class Login:
         self.password = password
         self.logger = Logger()
 
-    def check_connectivity(self):  # return type: bool
+    def check_connectivity(self) -> bool:
         try_URL = "http://www.example.com"
         try:
             requests.get(try_URL)
@@ -21,7 +21,7 @@ class Login:
         except:
             return False
 
-    def login(self):
+    def login(self) -> requests.session:
         _URL = Manager.URL.value + "/Kampus1"
         HEADERS = {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -61,7 +61,7 @@ class Login:
 
     def _login_request(
         self, session: requests.Session, post_data: dict, page: BeautifulSoup
-    ):
+    ) -> requests.session.post:
         page = session.post(
             "https://girisv3.itu.edu.tr" + page.form.get("action")[1:], data=post_data
         )

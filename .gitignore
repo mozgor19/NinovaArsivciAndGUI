@@ -2,3 +2,4 @@ __pycache__/
 ui/__pycache__/
 .vscode/
 .last_dir
+.DS_Store

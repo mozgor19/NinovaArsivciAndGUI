@@ -33,7 +33,7 @@ class Downloader:
         self.base_path = None
         self.copy_session = None
 
-        # self.get_directory()
+        # self.get_directory() -> in order to use main_terminal, use this line
         self.session_copy()
 
     def set_directory(self, path):

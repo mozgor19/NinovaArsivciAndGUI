@@ -91,7 +91,7 @@ class MainApp(QtWidgets.QMainWindow):
             "Lütfen indirmek istediğiniz dersleri ve indirme yerini seçin."
         )
 
-    def select_courses(self):
+    def select_courses(self) -> tuple:
 
         selected_courses = []
         binary_check = []
