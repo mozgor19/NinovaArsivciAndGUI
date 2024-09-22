@@ -1,5 +1,6 @@
 __pycache__/
 ui/__pycache__/
+diagrams/__pycache__/
 .vscode/
 .last_dir
 .DS_Store
