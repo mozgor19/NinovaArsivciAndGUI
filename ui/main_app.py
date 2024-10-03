@@ -125,6 +125,12 @@ class MainApp(QtWidgets.QMainWindow):
         self.download_folder = QFileDialog.getExistingDirectory(
             None, "İndirme klasörü seç", ""
         )
+
+        if not self.download_folder:
+            self.download_folder = QStandardPaths.writableLocation(
+                QStandardPaths.DesktopLocation
+            )
+
         self.ui.label_selectionInfo.setText(f"Seçilen dizin: {self.download_folder}")
 
     def download(self):

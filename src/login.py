@@ -61,7 +61,7 @@ class Login:
 
     def _login_request(
         self, session: requests.Session, post_data: dict, page: BeautifulSoup
-    ) -> requests.session.post:
+    ):
         page = session.post(
             "https://girisv3.itu.edu.tr" + page.form.get("action")[1:], data=post_data
         )
